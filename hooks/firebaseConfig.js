@@ -1,10 +1,8 @@
-// firebaseConfig.js
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+// backend/firebaseConfig.js
+import firebase from 'firebase/compat/app';
+import 'firebase/compat/auth';
+import 'firebase/compat/firestore';
 
-// Tu nueva configuración de Firebase para disenoMobile
 const firebaseConfig = {
   apiKey: "AIzaSyAnRsPYRicb1babBn08iHENDyhP0_HZ-iI",
   authDomain: "disenomobile.firebaseapp.com",
@@ -15,12 +13,13 @@ const firebaseConfig = {
   measurementId: "G-2FZHK0DSLK"
 };
 
-// Inicializa Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+// Inicializa Firebase sólo una vez
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
 
-// Inicializa Auth y Firestore
-const auth = getAuth(app);
-const db = getFirestore(app);
+// Exporta los servicios
+const auth = firebase.auth();
+const db   = firebase.firestore();
 
-export { app, analytics, auth, db };
+export { firebase, auth, db };

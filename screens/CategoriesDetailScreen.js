@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext, useMemo, useRef } from 'react';
+import React, { useEffect, useState, useContext, useMemo, useRef, useLayoutEffect } from 'react';
 import {
   View,
   FlatList,
@@ -20,8 +20,17 @@ import { useGoogleAuth } from '../hooks/useGoogleAuth';
 
 const PAGE_SIZE = 6;
 
+// Traducciones para categorías
+const CAT_TRANSLATIONS = {
+  1: { es: 'Ropa', en: 'Clothing' },
+  2: { es: 'Electrónica', en: 'Electronics' },
+  3: { es: 'Muebles', en: 'Furniture' },
+  4: { es: 'Calzado', en: 'Shoes' },
+  5: { es: 'Misceláneo', en: 'Miscellaneous' }
+};
+
 export default function CategoriesDetailScreen({ route, navigation }) {
-  const { categoryId, categoryName } = route.params;
+  const { categoryId } = route.params; // Usamos solo categoryId
   const { isDarkMode, language } = useContext(ThemeContext);
   const { user } = useGoogleAuth();
 
@@ -36,6 +45,9 @@ export default function CategoriesDetailScreen({ route, navigation }) {
   const [priceMin, setPriceMin] = useState('');
   const [priceMax, setPriceMax] = useState('');
   const [sortAsc, setSortAsc] = useState(true);
+
+  // Estado para búsqueda local dentro de los productos cargados
+  const [searchQuery, setSearchQuery] = useState('');
 
   const isWeb = Platform.OS === 'web';
   const numCols = isWeb ? 4 : 2;
@@ -64,7 +76,15 @@ export default function CategoriesDetailScreen({ route, navigation }) {
     }
   };
 
-  // Carga productos con filtro rango y orden
+  // Actualizar título dinámicamente según idioma y categoría
+  useLayoutEffect(() => {
+    const title = CAT_TRANSLATIONS[categoryId]
+      ? CAT_TRANSLATIONS[categoryId][language]
+      : 'Category';
+    navigation.setOptions({ title });
+  }, [language, navigation, categoryId]);
+
+  // Carga productos con filtro rango, orden y búsqueda local
   const loadProducts = async () => {
     setLoading(true);
     try {
@@ -82,6 +102,13 @@ export default function CategoriesDetailScreen({ route, navigation }) {
         if (items.length < PAGE_SIZE) break;
       }
       combined.sort((a, b) => (sortAsc ? a.price - b.price : b.price - a.price));
+
+      if (searchQuery.trim()) {
+        combined = combined.filter(p =>
+          p.title.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+      }
+
       setAllProducts(combined);
     } catch (e) {
       console.error(e);
@@ -91,9 +118,8 @@ export default function CategoriesDetailScreen({ route, navigation }) {
   };
 
   useEffect(() => {
-    navigation.setOptions({ title: categoryName });
     loadProducts();
-  }, [categoryId, priceMin, priceMax, sortAsc]);
+  }, [categoryId, priceMin, priceMax, sortAsc, searchQuery]);
 
   useEffect(() => {
     flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
@@ -132,19 +158,20 @@ export default function CategoriesDetailScreen({ route, navigation }) {
   // Interpolación animación altura
   const filterHeight = filterAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, 140], // altura desplegada
+    outputRange: [0, 180],
   });
 
   return (
     <View style={[styles.container, isDarkMode ? styles.bgDark : styles.bgLight]}>
       <AppHeader
-        searchQuery={''}
-        setSearchQuery={() => {}}
-        onSearchSubmit={() => {}}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        onSearchSubmit={() => {}} // No navegas a otra pantalla, buscas local
         onMenuPress={null}
         onCartPress={() => navigation.navigate('Cart')}
-        onAccountPress={() => setAccountModalVisible(true)}
+        onAccountPress={() => setFilterVisible(true)}
         userEmail={user?.email}
+        categoryId={categoryId}
       />
 
       <TouchableOpacity style={styles.filterToggleBtn} onPress={toggleFilter}>
@@ -153,42 +180,81 @@ export default function CategoriesDetailScreen({ route, navigation }) {
         </Text>
       </TouchableOpacity>
 
-      <Animated.View style={[styles.filterContainer, { height: filterHeight }, isDarkMode ? styles.filterDark : styles.filterLight]}>
+      <Animated.View
+        style={[
+          styles.filterContainer,
+          { height: filterHeight, paddingHorizontal: filterVisible ? 20 : 0, paddingVertical: filterVisible ? 15 : 0, overflow: 'hidden' },
+          isDarkMode ? styles.filterDark : styles.filterLight,
+        ]}
+      >
         {filterVisible && (
           <>
             <View style={styles.filterRow}>
-              <Text style={[styles.label, isDarkMode ? styles.textLight : styles.textDark]}>
-                {labels.minPrice}:
-              </Text>
-              <TextInput
-                style={[styles.filterInput, isDarkMode ? styles.inputDark : styles.inputLight]}
-                keyboardType="numeric"
-                value={priceMin}
-                onChangeText={text => {
-                  setPriceMin(text.replace(/[^0-9]/g, ''));
-                  setPage(1);
-                }}
-                placeholder="0"
-                placeholderTextColor={isDarkMode ? '#aaa' : '#666'}
-              />
-              <Text style={[styles.label, isDarkMode ? styles.textLight : styles.textDark]}>
-                {labels.maxPrice}:
-              </Text>
-              <TextInput
-                style={[styles.filterInput, isDarkMode ? styles.inputDark : styles.inputLight]}
-                keyboardType="numeric"
-                value={priceMax}
-                onChangeText={text => {
-                  setPriceMax(text.replace(/[^0-9]/g, ''));
-                  setPage(1);
-                }}
-                placeholder="9999"
-                placeholderTextColor={isDarkMode ? '#aaa' : '#666'}
-              />
+              <View style={styles.filterGroup}>
+                <Text
+                  style={[
+                    styles.label,
+                    isDarkMode ? styles.textLight : styles.textDark,
+                    { fontFamily: 'Roboto', fontWeight: '900', fontSize: 16, letterSpacing: 0.5 },
+                  ]}
+                >
+                  {labels.minPrice}:
+                </Text>
+                <TextInput
+                  style={[
+                    styles.filterInput,
+                    isDarkMode ? styles.inputDark : styles.inputLight,
+                    { fontWeight: '900', fontSize: 18, letterSpacing: 0.5, paddingVertical: 4, textAlignVertical: 'center' },
+                  ]}
+                  keyboardType="numeric"
+                  value={priceMin}
+                  onChangeText={text => {
+                    setPriceMin(text.replace(/[^0-9]/g, ''));
+                    setPage(1);
+                  }}
+                  placeholder="0"
+                  placeholderTextColor={isDarkMode ? '#aaa' : '#666'}
+                />
+              </View>
+
+              <View style={styles.filterGroup}>
+                <Text
+                  style={[
+                    styles.label,
+                    isDarkMode ? styles.textLight : styles.textDark,
+                    { fontFamily: 'Roboto', fontWeight: '900', fontSize: 16, letterSpacing: 0.5 },
+                  ]}
+                >
+                  {labels.maxPrice}:
+                </Text>
+                <TextInput
+                  style={[
+                    styles.filterInput,
+                    isDarkMode ? styles.inputDark : styles.inputLight,
+                    { fontWeight: '900', fontSize: 18, letterSpacing: 0.5, paddingVertical: 4, textAlignVertical: 'center' },
+                  ]}
+                  keyboardType="numeric"
+                  value={priceMax}
+                  onChangeText={text => {
+                    setPriceMax(text.replace(/[^0-9]/g, ''));
+                    setPage(1);
+                  }}
+                  placeholder="9999"
+                  placeholderTextColor={isDarkMode ? '#aaa' : '#666'}
+                />
+              </View>
             </View>
 
             <View style={styles.filterRow}>
-              <Text style={[styles.label, isDarkMode ? styles.textLight : styles.textDark]}>{labels.sort}:</Text>
+              <Text
+                style={[
+                  styles.label,
+                  isDarkMode ? styles.textLight : styles.textDark,
+                  { fontFamily: 'Roboto', fontWeight: '900', fontSize: 16, letterSpacing: 0.5 },
+                ]}
+              >
+                {labels.sort}:
+              </Text>
               <TouchableOpacity
                 onPress={() => {
                   setSortAsc(true);
@@ -196,7 +262,14 @@ export default function CategoriesDetailScreen({ route, navigation }) {
                 }}
                 style={[styles.sortBtn, sortAsc && styles.sortBtnSelected]}
               >
-                <Text style={sortAsc ? styles.sortTextSelected : styles.sortText}>{labels.asc}</Text>
+                <Text
+                  style={[
+                    sortAsc ? styles.sortTextSelected : styles.sortText,
+                    { fontWeight: '900', color: isDarkMode ? '#fff' : '#000' },
+                  ]}
+                >
+                  {labels.asc}
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => {
@@ -205,7 +278,14 @@ export default function CategoriesDetailScreen({ route, navigation }) {
                 }}
                 style={[styles.sortBtn, !sortAsc && styles.sortBtnSelected]}
               >
-                <Text style={!sortAsc ? styles.sortTextSelected : styles.sortText}>{labels.desc}</Text>
+                <Text
+                  style={[
+                    !sortAsc ? styles.sortTextSelected : styles.sortText,
+                    { fontWeight: '900', color: isDarkMode ? '#fff' : '#000' },
+                  ]}
+                >
+                  {labels.desc}
+                </Text>
               </TouchableOpacity>
             </View>
           </>
@@ -278,39 +358,21 @@ const styles = StyleSheet.create({
   filterToggleBtn: { padding: 12, backgroundColor: '#007AFF', borderRadius: 6, alignItems: 'center', marginHorizontal: 10, marginTop: 10 },
   filterToggleText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
 
-  filterContainer: {
-    overflow: 'hidden',
-    marginHorizontal: 10,
-    borderRadius: 8,
-    padding: 10,
-  },
+  filterContainer: { overflow: 'hidden', marginHorizontal: 10, borderRadius: 8, padding: 10 },
 
   filterDark: { backgroundColor: '#333' },
   filterLight: { backgroundColor: '#fff' },
 
   filterRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
-  filterInput: {
-    borderWidth: 1,
-    borderRadius: 6,
-    height: 36,
-    paddingHorizontal: 8,
-    minWidth: 70,
-  },
+  filterInput: { borderWidth: 1, borderRadius: 6, height: 36, paddingHorizontal: 8, minWidth: 70 },
 
   inputDark: { borderColor: '#555', backgroundColor: '#333', color: '#fff' },
   inputLight: { borderColor: '#ccc', backgroundColor: '#fff', color: '#000' },
 
   label: { fontSize: 14, marginRight: 5 },
 
-  sortBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    borderWidth: 1,
-    marginHorizontal: 4,
-  },
+  sortBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, marginHorizontal: 4 },
   sortBtnSelected: { backgroundColor: '#007AFF', borderColor: '#007AFF' },
   sortText: { color: '#555' },
   sortTextSelected: { color: '#fff', fontWeight: '600' },
-
 });

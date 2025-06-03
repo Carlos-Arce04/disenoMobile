@@ -88,7 +88,7 @@ export default function ProductCard({ product, categoryId, onPress, cardWidth, m
         <Text style={styles.price}>${product.price}</Text>
 
         {editing && (
-          <>  
+          <>
             {/* Selector de tallas si aplica */}
             {isSized && size === null && (
               <View style={styles.sizeContainer}>
@@ -106,15 +106,28 @@ export default function ProductCard({ product, categoryId, onPress, cardWidth, m
                         stock <= 0 && styles.sizeBtnDisabled
                       ]}
                     >
-                      <Text
-                        style={[
-                          styles.sizeText,
-                          stock <= 0 && styles.sizeTextDisabled,
-                          size === sz && styles.sizeTextSelected
-                        ]}
-                      >
-                        {sz} ({stock})
-                      </Text>
+                      <View style={styles.sizeTextWrapper}>
+                        <Text
+                          style={[
+                            styles.sizeText,
+                            size === sz && styles.sizeTextSelected,
+                            stock <= 0 && styles.sizeTextDisabled,
+                          ]}
+                          allowFontScaling={false}
+                        >
+                          {sz}
+                        </Text>
+                        <Text
+                          style={[
+                            styles.stockText,
+                            stock <= 0 && styles.sizeTextDisabled,
+                            size === sz && styles.sizeTextSelected,
+                          ]}
+                          allowFontScaling={false}
+                        >
+                          ({stock})
+                        </Text>
+                      </View>
                     </TouchableOpacity>
                   );
                 })}
@@ -216,7 +229,7 @@ const styles = StyleSheet.create({
     marginBottom: 4
   },
   sizeBtn: {
-    paddingHorizontal: 8,
+    paddingHorizontal: 12,   // Aumentado para más espacio horizontal
     paddingVertical: 4,
     borderWidth: 1,
     borderColor: '#999',
@@ -231,8 +244,22 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
     backgroundColor: '#f2f2f2'
   },
+  sizeTextWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexShrink: 0,        // Evita que el contenedor se reduzca y corte texto
+    justifyContent: 'flex-start',
+  },
   sizeText: {
-    fontSize: 12
+    fontSize: 12,
+    flexShrink: 0,        // No permite que se reduzca el texto
+  },
+  stockText: {
+    fontSize: 12,
+    marginLeft: 4,
+    flexShrink: 0,        // No permite que se reduzca ni corte el paréntesis
+    minWidth: 20,         // Ancho mínimo para el stock entre paréntesis
+    paddingRight: 2,      // Espacio para evitar corte
   },
   sizeTextSelected: {
     color: '#007AFF',

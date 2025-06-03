@@ -49,12 +49,18 @@ export default function AppHeader({
           {isDarkMode ? '☀️' : '🌙'}
         </Text>
       </TouchableOpacity>
+<TouchableOpacity onPress={toggleLanguage} style={styles.iconBtn} accessibilityLabel="Cambiar idioma">
+  <Text
+    style={[
+      styles.iconTxt,
+      { color: isDarkMode ? '#fff' : '#000' },
+      { minWidth: 30, textAlign: 'center' } // Aquí agregas estas propiedades
+    ]}
+  >
+    {language.toUpperCase()}
+  </Text>
+</TouchableOpacity>
 
-      <TouchableOpacity onPress={toggleLanguage} style={styles.iconBtn} accessibilityLabel="Cambiar idioma">
-        <Text style={[styles.iconTxt, { color: isDarkMode ? '#fff' : '#000' }]}>
-          {language.toUpperCase()}
-        </Text>
-      </TouchableOpacity>
 
       {onMenuPress && (
         <TouchableOpacity onPress={onMenuPress} style={styles.iconBtn} accessibilityLabel="Abrir menú">

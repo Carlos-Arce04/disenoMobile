@@ -34,8 +34,20 @@ export default function CartScreen({ navigation }) {
   }, [language, navigation]);
 
   const renderEmpty = () => (
-    <View style={[styles.center, isDarkMode ? styles.darkBg : styles.lightBg]}>
-      <Text style={[styles.emptyText, isDarkMode ? styles.darkText : styles.lightText]}>
+    <View
+      style={[
+        styles.center,
+        isDarkMode ? styles.darkBg : styles.lightBg,
+        { paddingHorizontal: 20 }
+      ]}
+    >
+      <Text
+        style={[
+          styles.emptyText,
+          isDarkMode ? styles.darkText : styles.lightText,
+          { minWidth: 180, textAlign: 'center', flexWrap: 'wrap', flexShrink: 1 }
+        ]}
+      >
         {language === 'es' ? 'Tu carrito está vacío.' : 'Your cart is empty.'}
       </Text>
     </View>
@@ -44,7 +56,7 @@ export default function CartScreen({ navigation }) {
   const total = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   return (
-    <View style={[styles.container, isDarkMode ? styles.darkBg : styles.lightBg]}>      
+    <View style={[styles.container, isDarkMode ? styles.darkBg : styles.lightBg]}>
       {cartItems.length === 0 ? (
         renderEmpty()
       ) : (
@@ -108,7 +120,7 @@ export default function CartScreen({ navigation }) {
             }}
           />
 
-          <View style={[styles.summary, { borderTopColor: isDarkMode ? '#555' : '#ccc' }]}>          
+          <View style={[styles.summary, { borderTopColor: isDarkMode ? '#555' : '#ccc' }]}>
             <Text style={[styles.totalText, isDarkMode ? styles.darkText : styles.lightText]}>
               {language === 'es' ? 'Total:' : 'Total:'} ${total.toFixed(2)}
             </Text>
@@ -131,7 +143,12 @@ const styles = StyleSheet.create({
   darkBg: { backgroundColor: '#111' },
   lightText: { color: '#000' },
   darkText: { color: '#fff' },
-  emptyText: { fontSize: 16 },
+  emptyText: {
+    fontSize: 16,
+    textAlign: 'center',
+    flexWrap: 'wrap',
+    flexShrink: 1,
+  },
   qtyContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 8 },
   qtyBtn: { fontSize: 20, paddingHorizontal: 10 },
   qtyInput: { borderWidth: 1, width: 40, textAlign: 'center', marginHorizontal: 8, borderRadius: 4, backgroundColor: 'transparent' },

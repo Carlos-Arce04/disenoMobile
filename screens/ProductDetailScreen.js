@@ -158,26 +158,42 @@ export default function ProductDetailScreen({ route, navigation }) {
               </Text>
               <View style={styles.sizeContainer}>
                 {SIZE_SETS[product.category.id].map(sz => {
-                  const stock = availableStocks[sz] || 0;
+                  const stock = availableStocks[sz] ?? 0;
                   return (
                     <TouchableOpacity
                       key={sz}
-                      disabled={stock === 0}
+                      disabled={stock <= 0}
                       onPress={() => { setSize(sz); setEditing(false); }}
                       style={[
                         styles.sizeBtn,
-                        size === sz          && styles.sizeBtnSelected,
-                        stock === 0          && styles.sizeBtnDisabled
+                        size === sz && styles.sizeBtnSelected,
+                        stock <= 0 && styles.sizeBtnDisabled
                       ]}
                     >
-                      <Text style={[
-                        styles.sizeText,
-                        isDarkMode ? styles.darkText : styles.lightText,
-                        size === sz          && styles.sizeTextSelected,
-                        stock === 0          && styles.sizeTextDisabled
-                      ]}>
-                        {sz} ({stock})
-                      </Text>
+                      <View style={styles.sizeTextWrapper}>
+                        <Text
+                          style={[
+                            styles.sizeText,
+                            size === sz && styles.sizeTextSelected,
+                            stock <= 0 && styles.sizeTextDisabled,
+                            isDarkMode ? styles.darkText : styles.lightText,
+                          ]}
+                          allowFontScaling={false}
+                        >
+                          {sz}
+                        </Text>
+                        <Text
+                          style={[
+                            styles.stockText,
+                            size === sz && styles.sizeTextSelected,
+                            stock <= 0 && styles.sizeTextDisabled,
+                            isDarkMode ? styles.darkText : styles.lightText,
+                          ]}
+                          allowFontScaling={false}
+                        >
+                          ({stock})
+                        </Text>
+                      </View>
                     </TouchableOpacity>
                   );
                 })}
@@ -252,12 +268,35 @@ const styles = StyleSheet.create({
   sizeSection:    { marginBottom: 16 },
   subTitle:       { fontSize: 14, marginBottom: 8 },
   sizeContainer:  { flexDirection: 'row', flexWrap: 'wrap' },
-  sizeBtn:        { padding: 6, borderWidth: 1, borderColor: '#999', borderRadius: 4, marginRight: 8, marginBottom: 8 },
-  sizeBtnSelected:{ borderColor: '#007AFF' },
-  sizeBtnDisabled:{ borderColor: '#ccc', backgroundColor: '#f2f2f2' },
-  sizeText:       { fontSize: 14 },
-  sizeTextSelected:{ color: '#007AFF', fontWeight: '600' },
-  sizeTextDisabled:{ color: '#999' },
+  sizeBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    minWidth: 52,
+    borderWidth: 1,
+    borderColor: 'red', // borde rojo como pediste
+    borderRadius: 4,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  sizeBtnSelected: { borderColor: '#007AFF' },
+  sizeBtnDisabled: { borderColor: '#ccc', backgroundColor: '#f2f2f2' },
+  sizeTextWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between', // espacio entre talla y stock
+    paddingHorizontal: 8,
+  },
+  sizeText: {
+    fontSize: 14,
+    minWidth: 24, // ancho mínimo para tallas como XS
+  },
+  sizeTextSelected: { color: '#007AFF', fontWeight: '600' },
+  sizeTextDisabled: { color: '#999' },
+  stockText: {
+    fontSize: 12,
+    minWidth: 30,  // ancho para el stock (5)
+    textAlign: 'right',
+  },
   cartBtn:        { alignSelf: 'center', marginBottom: 16 },
   cartIcon:       { width: 48, height: 48 },
   tintDark:       { tintColor: '#fff' },
@@ -280,8 +319,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#eee',
   },
   rightButtonsContainer: {
-    flexDirection: 'row',     // botones en fila
-    justifyContent: 'flex-end', // alineados a la derecha
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
     flex: 1,
   },
   iconBtn: {

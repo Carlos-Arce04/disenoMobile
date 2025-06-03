@@ -1,4 +1,3 @@
-// screens/ProductDetailScreen.js
 import React, { useEffect, useState, useContext, useLayoutEffect } from 'react';
 import {
   View,
@@ -20,7 +19,7 @@ const IMAGE_SIZE = width;  // cuadrado para que se vea completa
 
 export default function ProductDetailScreen({ route, navigation }) {
   const { productId } = route.params;
-  const { isDarkMode, language } = useContext(ThemeContext);
+  const { isDarkMode, language, toggleDarkMode, toggleLanguage } = useContext(ThemeContext);
   const {
     cartItems,
     stocks,
@@ -99,108 +98,127 @@ export default function ProductDetailScreen({ route, navigation }) {
   };
 
   return (
-    <ScrollView style={[styles.container, isDarkMode ? styles.darkBg : styles.lightBg]}>
-      {/* Carrusel cuadrado */}
-      <ScrollView
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onScroll={e => setPage(Math.round(e.nativeEvent.contentOffset.x / width))}
-        style={styles.carousel}
-      >
-        {images.map((uri, idx) => (
-          <Image
-            key={idx}
-            source={{ uri }}
-            style={{ width: IMAGE_SIZE, height: IMAGE_SIZE, resizeMode: 'cover' }}
-          />
-        ))}
-      </ScrollView>
-      <View style={styles.pageIndicator}>
-        <Text style={isDarkMode ? styles.darkText : styles.lightText}>
-          {page + 1} / {images.length}
-        </Text>
-      </View>
-
-      <View style={styles.details}>
-        <Text style={[styles.title,   isDarkMode ? styles.darkText : styles.lightText]}>
-          {product.title}
-        </Text>
-        <Text style={[styles.price,   isDarkMode ? styles.darkText : styles.lightText]}>
-          ${product.price}
-        </Text>
-        <Text style={[styles.desc,    isDarkMode ? styles.darkText : styles.lightText]}>
-          {product.description}
-        </Text>
-
-        {/* Selector de tallas */}
-        {isSized && !editing && (
-          <View style={styles.sizeSection}>
-            <Text style={[styles.subTitle, isDarkMode ? styles.darkText : styles.lightText]}>
-              {texts.selectSize}
+    <View style={[styles.container, isDarkMode ? styles.darkBg : styles.lightBg]}>
+      {/* Barra superior simple solo para modo e idioma alineada a la derecha */}
+      <View style={[styles.topBar, isDarkMode ? styles.darkBar : styles.lightBar]}>
+        <View style={styles.rightButtonsContainer}>
+          <TouchableOpacity onPress={toggleDarkMode} style={styles.iconBtn} accessibilityLabel="Cambiar tema">
+            <Text style={[styles.iconTxt, { color: isDarkMode ? '#fff' : '#000' }]}>
+              {isDarkMode ? '☀️' : '🌙'}
             </Text>
-            <View style={styles.sizeContainer}>
-              {SIZE_SETS[product.category.id].map(sz => {
-                const stock = availableStocks[sz] || 0;
-                return (
-                  <TouchableOpacity
-                    key={sz}
-                    disabled={stock === 0}
-                    onPress={() => { setSize(sz); setEditing(false); }}
-                    style={[
-                      styles.sizeBtn,
-                      size === sz          && styles.sizeBtnSelected,
-                      stock === 0          && styles.sizeBtnDisabled
-                    ]}
-                  >
-                    <Text style={[
-                      styles.sizeText,
-                      isDarkMode ? styles.darkText : styles.lightText,
-                      size === sz          && styles.sizeTextSelected,
-                      stock === 0          && styles.sizeTextDisabled
-                    ]}>
-                      {sz} ({stock})
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </View>
-        )}
-
-        {/* Botón carrito (imagen) */}
-        {!editing && (
-          <TouchableOpacity style={styles.cartBtn} onPress={handleAdd}>
-            <Image
-              source={require('../assets/cart.png')}
-              style={[styles.cartIcon, isDarkMode ? styles.tintDark : styles.tintLight]}
-            />
           </TouchableOpacity>
-        )}
 
-        {/* Controles cantidad */}
-        {editing && (
-          <View style={styles.qtySection}>
-            <TouchableOpacity
-              onPress={() => { setEditing(false); setSize(null); }}
-            >
-              <Text style={styles.checkBtn}>✅</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => updateQuantity(productId, product.category.id, size, -1)}
-            >
-              <Text style={[styles.qtyBtn, isDarkMode ? styles.darkText : styles.lightText]}>−</Text>
-            </TouchableOpacity>
-            <Text style={[styles.qtyCount, isDarkMode ? styles.darkText : styles.lightText]}>
-              {quantity}
+          <TouchableOpacity onPress={toggleLanguage} style={styles.iconBtn} accessibilityLabel="Cambiar idioma">
+            <Text style={[styles.iconTxt, { color: isDarkMode ? '#fff' : '#000' }]}>
+              {language.toUpperCase()}
             </Text>
-            <TouchableOpacity onPress={handleAdd}>
-              <Text style={[styles.qtyBtn, isDarkMode ? styles.darkText : styles.lightText]}>＋</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+          </TouchableOpacity>
+        </View>
       </View>
-    </ScrollView>
+
+      <ScrollView>
+        {/* Carrusel cuadrado */}
+        <ScrollView
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onScroll={e => setPage(Math.round(e.nativeEvent.contentOffset.x / width))}
+          style={styles.carousel}
+        >
+          {images.map((uri, idx) => (
+            <Image
+              key={idx}
+              source={{ uri }}
+              style={{ width: IMAGE_SIZE, height: IMAGE_SIZE, resizeMode: 'cover' }}
+            />
+          ))}
+        </ScrollView>
+        <View style={styles.pageIndicator}>
+          <Text style={isDarkMode ? styles.darkText : styles.lightText}>
+            {page + 1} / {images.length}
+          </Text>
+        </View>
+
+        <View style={styles.details}>
+          <Text style={[styles.title,   isDarkMode ? styles.darkText : styles.lightText]}>
+            {product.title}
+          </Text>
+          <Text style={[styles.price,   isDarkMode ? styles.darkText : styles.lightText]}>
+            ${product.price}
+          </Text>
+          <Text style={[styles.desc,    isDarkMode ? styles.darkText : styles.lightText]}>
+            {product.description}
+          </Text>
+
+          {/* Selector de tallas */}
+          {isSized && !editing && (
+            <View style={styles.sizeSection}>
+              <Text style={[styles.subTitle, isDarkMode ? styles.darkText : styles.lightText]}>
+                {texts.selectSize}
+              </Text>
+              <View style={styles.sizeContainer}>
+                {SIZE_SETS[product.category.id].map(sz => {
+                  const stock = availableStocks[sz] || 0;
+                  return (
+                    <TouchableOpacity
+                      key={sz}
+                      disabled={stock === 0}
+                      onPress={() => { setSize(sz); setEditing(false); }}
+                      style={[
+                        styles.sizeBtn,
+                        size === sz          && styles.sizeBtnSelected,
+                        stock === 0          && styles.sizeBtnDisabled
+                      ]}
+                    >
+                      <Text style={[
+                        styles.sizeText,
+                        isDarkMode ? styles.darkText : styles.lightText,
+                        size === sz          && styles.sizeTextSelected,
+                        stock === 0          && styles.sizeTextDisabled
+                      ]}>
+                        {sz} ({stock})
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+          )}
+
+          {/* Botón carrito (imagen) */}
+          {!editing && (
+            <TouchableOpacity style={styles.cartBtn} onPress={handleAdd}>
+              <Image
+                source={require('../assets/cart.png')}
+                style={[styles.cartIcon, isDarkMode ? styles.tintDark : styles.tintLight]}
+              />
+            </TouchableOpacity>
+          )}
+
+          {/* Controles cantidad */}
+          {editing && (
+            <View style={styles.qtySection}>
+              <TouchableOpacity
+                onPress={() => { setEditing(false); setSize(null); }}
+              >
+                <Text style={styles.checkBtn}>✅</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => updateQuantity(productId, product.category.id, size, -1)}
+              >
+                <Text style={[styles.qtyBtn, isDarkMode ? styles.darkText : styles.lightText]}>−</Text>
+              </TouchableOpacity>
+              <Text style={[styles.qtyCount, isDarkMode ? styles.darkText : styles.lightText]}>
+                {quantity}
+              </Text>
+              <TouchableOpacity onPress={handleAdd}>
+                <Text style={[styles.qtyBtn, isDarkMode ? styles.darkText : styles.lightText]}>＋</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -249,5 +267,27 @@ const styles = StyleSheet.create({
   qtyBtn:         { fontSize: 24, marginHorizontal: 16 },
   qtyCount:       { fontSize: 18, minWidth: 32, textAlign: 'center' },
   darkText:       { color: '#fff' },
-  lightText:      { color: '#000' }
+  lightText:      { color: '#000' },
+
+  topBar: {
+    flexDirection: 'row',
+    padding: 10,
+  },
+  darkBar: {
+    backgroundColor: '#333',
+  },
+  lightBar: {
+    backgroundColor: '#eee',
+  },
+  rightButtonsContainer: {
+    flexDirection: 'row',     // botones en fila
+    justifyContent: 'flex-end', // alineados a la derecha
+    flex: 1,
+  },
+  iconBtn: {
+    marginLeft: 12,
+  },
+  iconTxt: {
+    fontSize: 20,
+  },
 });

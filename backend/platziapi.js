@@ -92,22 +92,35 @@ export const searchProducts = async (query, page = 1) => {
 };
 
 /**
- * Obtener los N productos más caros de entre las primeras M páginas.
- * @param {number} pages — cuántas páginas cargar.
- * @param {number} topN — cuántos productos devolver.
- * @returns {Promise<any[]>} Array de los productos más caros.
+ * Obtener productos por categoría con filtro de rango de precio y paginados.
+ * @param {number|string} categoryId — ID de la categoría.
+ * @param {number} priceMin — Precio mínimo (opcional).
+ * @param {number} priceMax — Precio máximo (opcional).
+ * @param {number} page — número de página (inicia en 1).
+ * @returns {Promise<any[]>} Array de productos.
  */
-export const getMostExpensiveProducts = async (pages = 5, topN = PAGE_SIZE) => {
+export const getProductsByCategoryWithPriceFilter = async (
+  categoryId,
+  priceMin,
+  priceMax,
+  page = 1
+) => {
+  const offset = (page - 1) * PAGE_SIZE;
+  // Construimos params dinámicamente
+  const params = {
+    categoryId,
+    offset,
+    limit: PAGE_SIZE
+  };
+  if (priceMin !== undefined) params.price_min = priceMin;
+  if (priceMax !== undefined) params.price_max = priceMax;
+
   try {
-    let all = [];
-    for (let p = 1; p <= pages; p++) {
-      const data = await getProducts(p);
-      all = all.concat(data);
-    }
-    all.sort((a, b) => b.price - a.price);
-    return all.slice(0, topN);
+    const response = await api.get('/products', { params });
+    return response.data;
   } catch (error) {
-    console.error('Error al obtener productos caros:', error);
+    console.error('Error al obtener productos con filtro de precio:', error);
     throw error;
   }
 };
+

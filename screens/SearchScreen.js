@@ -4,14 +4,13 @@ import {
   Text,
   StyleSheet,
   TextInput,
-  TouchableOpacity,
   ActivityIndicator,
   FlatList,
   Button,
   Platform,
   Dimensions
 } from 'react-native';
-import { searchProducts } from '../backend/platziapi';
+import { searchProducts, getProductsByCategory } from '../backend/platziapi';
 import ProductCard from '../components/ProductCard';
 import { ThemeContext } from '../ThemeContext';
 
@@ -24,6 +23,7 @@ export default function SearchScreen({ navigation, route }) {
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [inputPage, setInputPage] = useState('');
+  const categoryId = route.params?.categoryId; // puede venir o no
 
   const isWeb = Platform.OS === 'web';
   const NUM_COLS = isWeb ? 4 : 2;
@@ -39,10 +39,29 @@ export default function SearchScreen({ navigation, route }) {
     }
     setLoading(true);
     try {
-      const data = await searchProducts(q, p);
-      setResults(data);
+      if (categoryId) {
+        // Buscar solo en la categoría
+        let allCategoryProducts = [];
+        let pageNum = 1;
+        while (true) {
+          const products = await getProductsByCategory(categoryId, pageNum++);
+          if (!products.length) break;
+          allCategoryProducts = allCategoryProducts.concat(products);
+          if (products.length < PAGE_SIZE) break;
+        }
+        // Filtrar localmente por título
+        const filtered = allCategoryProducts.filter(p =>
+          p.title.toLowerCase().includes(q.toLowerCase())
+        );
+        setResults(filtered);
+      } else {
+        // Búsqueda global sin filtro
+        const data = await searchProducts(q, p);
+        setResults(data);
+      }
     } catch (e) {
       console.error('Error buscando productos:', e);
+      setResults([]);
     } finally {
       setLoading(false);
     }
@@ -72,15 +91,15 @@ export default function SearchScreen({ navigation, route }) {
 
   const labels = {
     search: language === 'es' ? 'Buscar' : 'Search',
-    first:  language === 'es' ? 'Primera' : 'First',
-    prev:   language === 'es' ? 'Anterior' : 'Previous',
-    next:   language === 'es' ? 'Siguiente' : 'Next',
-    last:   language === 'es' ? 'Última' : 'Last',
-    go:     language === 'es' ? 'Ir' : 'Go'
+    first: language === 'es' ? 'Primera' : 'First',
+    prev: language === 'es' ? 'Anterior' : 'Previous',
+    next: language === 'es' ? 'Siguiente' : 'Next',
+    last: language === 'es' ? 'Última' : 'Last',
+    go: language === 'es' ? 'Ir' : 'Go'
   };
 
   return (
-    <View style={[styles.container, isDarkMode ? styles.darkBg : styles.lightBg]}>      
+    <View style={[styles.container, isDarkMode ? styles.darkBg : styles.lightBg]}>
       {/* Búsqueda */}
       <View style={styles.searchRow}>
         <TextInput
@@ -117,44 +136,44 @@ export default function SearchScreen({ navigation, route }) {
       )}
 
       {results.length > 0 && (
-        <View style={styles.pagination}>
-          <Button title={labels.first} onPress={handleFirst} disabled={page === 1} />
-          <Button title={labels.prev}  onPress={handlePrev}  disabled={page === 1} />
-          <Text style={[styles.pageText, isDarkMode ? styles.darkText : styles.lightText]}>            
-            {page} / {pageCount}
-          </Text>
-          <Button title={labels.next}  onPress={handleNext}  disabled={page === pageCount} />
-          <Button title={labels.last}  onPress={handleLast}  disabled={page === pageCount} />
-        </View>
-      )}
+        <>
+          <View style={styles.pagination}>
+            <Button title={labels.first} onPress={handleFirst} disabled={page === 1} />
+            <Button title={labels.prev} onPress={handlePrev} disabled={page === 1} />
+            <Text style={[styles.pageText, isDarkMode ? styles.darkText : styles.lightText]}>
+              {page} / {pageCount}
+            </Text>
+            <Button title={labels.next} onPress={handleNext} disabled={page === pageCount} />
+            <Button title={labels.last} onPress={handleLast} disabled={page === pageCount} />
+          </View>
 
-      {results.length > 0 && (
-        <View style={styles.gotoContainer}>
-          <TextInput
-            style={[styles.gotoInput, { color: isDarkMode ? '#fff' : '#000', borderColor: isDarkMode ? '#555' : '#ccc' }]}
-            placeholder="#"
-            placeholderTextColor={isDarkMode ? '#fff' : '#000'}
-            keyboardType="numeric"
-            value={inputPage}
-            onChangeText={setInputPage}
-          />
-          <Button title={labels.go} onPress={handleGoTo} disabled={pageCount <= 1} />
-        </View>
+          <View style={styles.gotoContainer}>
+            <TextInput
+              style={[styles.gotoInput, { color: isDarkMode ? '#fff' : '#000', borderColor: isDarkMode ? '#555' : '#ccc' }]}
+              placeholder="#"
+              placeholderTextColor={isDarkMode ? '#fff' : '#000'}
+              keyboardType="numeric"
+              value={inputPage}
+              onChangeText={setInputPage}
+            />
+            <Button title={labels.go} onPress={handleGoTo} disabled={pageCount <= 1} />
+          </View>
+        </>
       )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container:    { flex: 1 },
-  lightBg:      { backgroundColor: '#f2f2f2' },
-  darkBg:       { backgroundColor: '#111' },
-  lightText:    { color: '#000' },
-  darkText:     { color: '#fff' },
-  searchRow:    { flexDirection: 'row', alignItems: 'center', padding: 8 },
-  input:        { flex: 1, borderWidth: 1, borderRadius: 4, paddingHorizontal: 8, height: 40, marginRight: 8 },
-  pagination:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 8 },
-  pageText:     { fontSize: 16, fontWeight: 'bold' },
-  gotoContainer:{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', padding: 8 },
-  gotoInput:    { width: 50, borderWidth: 1, marginRight: 8, textAlign: 'center' }
+  container: { flex: 1 },
+  lightBg: { backgroundColor: '#f2f2f2' },
+  darkBg: { backgroundColor: '#111' },
+  lightText: { color: '#000' },
+  darkText: { color: '#fff' },
+  searchRow: { flexDirection: 'row', alignItems: 'center', padding: 8 },
+  input: { flex: 1, borderWidth: 1, borderRadius: 4, paddingHorizontal: 8, height: 40, marginRight: 8 },
+  pagination: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 8 },
+  pageText: { fontSize: 16, fontWeight: 'bold' },
+  gotoContainer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', padding: 8 },
+  gotoInput: { width: 50, borderWidth: 1, marginRight: 8, textAlign: 'center' }
 });
